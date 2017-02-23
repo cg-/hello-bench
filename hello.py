@@ -46,17 +46,20 @@ def tmp_copy(src):
     return dst
 
 class RunArgs:
-    def __init__(self, env={}, arg='', stdin='', stdin_sh='sh', waitline='', mount=[]):
+    def __init__(self, env={}, arg='', stdin='', stdin_sh='sh', waitline='', mount=[], vol_name='', vol_driver=''):
         self.env = env
         self.arg = arg
         self.stdin = stdin
         self.stdin_sh = stdin_sh
         self.waitline = waitline
         self.mount = mount
+        self.vol_name = vol_name
+        self.vol_driver = vol_driver
 
 class Bench:
-    def __init__(self, name, repo, category='other'):
+    def __init__(self, name, repo, dockerfile='', category='other'):
         self.name = name
+        self.dockerfile = dockerfile
         self.repo = repo
         self.category = category
 
@@ -64,6 +67,8 @@ class Bench:
         return json.dumps(self.__dict__)
 
 class BenchRunner:
+    STORAGE = { 'local': RunArgs(stdin='echo a >> /volume/test', vol_name='/tmp', vol_driver='local'),}
+
     ECHO_HELLO = set(['alpine',
                       'busybox',
                       'crux',
@@ -140,63 +145,64 @@ class BenchRunner:
 
     # complete listing
     ALL = dict([(b.name, b) for b in
-                [Bench('alpine','alpine', 'distro'),
-                 Bench('busybox','busybox', 'distro'),
-                 Bench('crux','crux', 'distro'),
-                 Bench('cirros','cirros', 'distro'),
-                 Bench('debian','debian', 'distro'),
-                 Bench('ubuntu','ubuntu', 'distro'),
-                 Bench('ubuntu-upstart','ubuntu-upstart', 'distro'),
-                 Bench('ubuntu-debootstrap','ubuntu-debootstrap', 'distro'),
-                 Bench('centos','centos', 'distro'),
-                 Bench('fedora','fedora', 'distro'),
-                 Bench('opensuse','opensuse', 'distro'),
-                 Bench('oraclelinux','oraclelinux', 'distro'),
-                 Bench('mageia','mageia', 'distro'),
-                 Bench('mysql','mysql', 'database'),
-                 Bench('percona','percona', 'database'),
-                 Bench('mariadb','mariadb', 'database'),
-                 Bench('postgres','postgres', 'database'),
-                 Bench('redis','redis', 'database'),
-                 Bench('crate','crate', 'database'),
-                 Bench('rethinkdb','rethinkdb', 'database'),
-                 Bench('php','php', 'language'),
-                 Bench('ruby','ruby', 'language'),
-                 Bench('jruby','jruby', 'language'),
-                 Bench('julia','julia', 'language'),
-                 Bench('perl','perl', 'language'),
-                 Bench('rakudo-star','rakudo-star', 'language'),
-                 Bench('pypy','pypy', 'language'),
-                 Bench('python','python', 'language'),
-                 Bench('golang','golang', 'language'),
-                 Bench('clojure','clojure', 'language'),
-                 Bench('haskell','haskell', 'language'),
-                 Bench('hylang','hylang', 'language'),
-                 Bench('java','java', 'language'),
-                 Bench('mono','mono', 'language'),
-                 Bench('r-base','r-base', 'language'),
-                 Bench('gcc','gcc', 'language'),
-                 Bench('thrift','thrift', 'language'),
-                 #Bench('cassandra','cassandra', 'database'), # cassandra causes issues?
-                 Bench('mongo','mongo', 'database'),
-                 Bench('elasticsearch','elasticsearch', 'database'),
-                 Bench('hello-world','hello-world'),
-                 Bench('ghost','ghost'),
-                 Bench('drupal','drupal'),
-                 Bench('jenkins','jenkins'),
-                 Bench('sonarqube','sonarqube'),
-                 Bench('rabbitmq','rabbitmq'),
-                 Bench('registry','registry'),
-                 Bench('httpd','httpd', 'web-server'),
-                 Bench('nginx','nginx', 'web-server'),
-                 Bench('glassfish','glassfish', 'web-server'),
-                 Bench('jetty','jetty', 'web-server'),
-                 Bench('php-zendserver','php-zendserver', 'web-server'),
-                 Bench('tomcat','tomcat', 'web-server'),
-                 Bench('django','django', 'web-framework'),
-                 Bench('rails','rails', 'web-framework'),
-                 Bench('node','node', 'web-framework'),
-                 Bench('iojs','iojs', 'web-framework'),
+                [Bench(name='alpine',repo='alpine', category='distro'),
+                 Bench(name='busybox',repo='busybox', category='distro'),
+                 Bench(name='crux',repo='crux', category='distro'),
+                 Bench(name='cirros',repo='cirros', category='distro'),
+                 Bench(name='debian',repo='debian', category='distro'),
+                 Bench(name='ubuntu',repo='ubuntu', category='distro'),
+                 Bench(name='ubuntu-upstart',repo='ubuntu-upstart', category='distro'),
+                 Bench(name='ubuntu-debootstrap',repo='ubuntu-debootstrap', category='distro'),
+                 Bench(name='centos',repo='centos', category='distro'),
+                 Bench(name='fedora',repo='fedora', category='distro'),
+                 Bench(name='opensuse',repo='opensuse', category='distro'),
+                 Bench(name='oraclelinux',repo='oraclelinux', category='distro'),
+                 Bench(name='mageia',repo='mageia', category='distro'),
+                 Bench(name='mysql',repo='mysql', category='database'),
+                 Bench(name='percona',repo='percona', category='database'),
+                 Bench(name='mariadb',repo='mariadb', category='database'),
+                 Bench(name='postgres',repo='postgres', category='database'),
+                 Bench(name='redis',repo='redis', category='database'),
+                 Bench(name='crate',repo='crate', category='database'),
+                 Bench(name='rethinkdb',repo='rethinkdb', category='database'),
+                 Bench(name='php',repo='php', category='language'),
+                 Bench(name='ruby',repo='ruby', category='language'),
+                 Bench(name='jruby',repo='jruby', category='language'),
+                 Bench(name='julia',repo='julia', category='language'),
+                 Bench(name='perl',repo='perl', category='language'),
+                 Bench(name='rakudo-star',repo='rakudo-star', category='language'),
+                 Bench(name='pypy',repo='pypy', category='language'),
+                 Bench(name='python',repo='python', category='language'),
+                 Bench(name='golang',repo='golang', category='language'),
+                 Bench(name='clojure',repo='clojure', category='language'),
+                 Bench(name='haskell',repo='haskell', category='language'),
+                 Bench(name='hylang',repo='hylang', category='language'),
+                 Bench(name='java',repo='java', category='language'),
+                 Bench(name='mono',repo='mono', category='language'),
+                 Bench(name='r-base',repo='r-base', category='language'),
+                 Bench(name='gcc',repo='gcc', category='language'),
+                 Bench(name='thrift',repo='thrift', category='language'),
+                 #Bench(name='cassandra',repo='cassandra', category='database'), # cassandra causes issues?
+                 Bench(name='mongo',repo='mongo', category='database'),
+                 Bench(name='elasticsearch',repo='elasticsearch', category='database'),
+                 Bench(name='hello-world',repo='hello-world'),
+                 Bench(name='ghost',repo='ghost'),
+                 Bench(name='drupal',repo='drupal'),
+                 Bench(name='jenkins',repo='jenkins'),
+                 Bench(name='sonarqube',repo='sonarqube'),
+                 Bench(name='rabbitmq',repo='rabbitmq'),
+                 Bench(name='registry',repo='registry'),
+                 Bench(name='httpd',repo='httpd', category='web-server'),
+                 Bench(name='nginx',repo='nginx', category='web-server'),
+                 Bench(name='glassfish',repo='glassfish', category='web-server'),
+                 Bench(name='jetty',repo='jetty', category='web-server'),
+                 Bench(name='php-zendserver',repo='php-zendserver', category='web-server'),
+                 Bench(name='tomcat',repo='tomcat', category='web-server'),
+                 Bench(name='django',repo='django', category='web-framework'),
+                 Bench(name='rails',repo='rails', category='web-framework'),
+                 Bench(name='node',repo='node', category='web-framework'),
+                 Bench(name='iojs',repo='iojs', category='web-framework'),
+                 Bench(name='local',repo='ubuntu', category='storage', dockerfile='storage/ubuntu'),
              ]])
 
     def __init__(self, docker='docker', registry='localhost:5000', registry2='localhost:5000'):
@@ -212,6 +218,27 @@ class BenchRunner:
         cmd = '%s run %s%s echo hello' % (self.docker, self.registry, repo)
         rc = os.system(cmd)
         assert(rc == 0)
+
+    def run_storage(self, repo, runargs, tag=''):
+        '''
+        run_storage runs storage benchmarks with the provided runargs on the given repo
+        '''
+        cmd = '%s run -v %s:/volume --volume-driver=%s ' % (self.docker, runargs.vol_name, runargs.vol_driver)
+
+        if tag is '':
+            cmd += '-i %s%s ' % (self.registry, repo)
+        else:
+            cmd += '-i %s ' % (tag)
+        if runargs.stdin_sh:
+            cmd += runargs.stdin_sh # e.g., sh -c
+
+        print cmd
+        p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        print runargs.stdin
+        out,_ = p.communicate(runargs.stdin)
+        print out
+        p.wait()
+        assert(p.returncode == 0)
 
     def run_cmd_arg(self, repo, runargs):
         assert(len(runargs.mount) == 0)
@@ -363,12 +390,26 @@ class BenchRunner:
             self.run_cmd_arg_wait(repo=repo, runargs=BenchRunner.CMD_ARG_WAIT[name])
         elif name in BenchRunner.CMD_STDIN:
             self.run_cmd_stdin(repo=repo, runargs=BenchRunner.CMD_STDIN[name])
+        elif name in BenchRunner.STORAGE:
+            if bench.dockerfile is '':
+                self.run_storage(repo=repo, runargs=BenchRunner.STORAGE[name])
+            else:
+                self.run_storage(repo=repo, tag='hellobench:' + repo + '-' + bench.name, runargs=BenchRunner.STORAGE[name])
         elif name in BenchRunner.CUSTOM:
             fn = BenchRunner.__dict__[BenchRunner.CUSTOM[name]]
             fn(self)
         else:
             print 'Unknown bench: '+name
             exit(1)
+
+    def build(self, bench):
+        if bench.dockerfile is '':
+            print 'supplied bench does not need to be built'
+            exit(1)
+        cmd = '%s build -t hellobench:%s-%s ' % (self.docker, bench.repo, bench.name)
+        cmd += os.path.join(os.path.dirname(os.path.abspath(__file__)),"dockerfiles/" , bench.dockerfile)
+        rc = os.system(cmd)
+        assert(rc == 0)
 
     def pull(self, bench):
         cmd = '%s pull %s%s' % (self.docker, self.registry, bench.repo)
@@ -396,6 +437,8 @@ class BenchRunner:
             self.push(bench)
         elif op == 'tag':
             self.tag(bench)
+        elif op == 'build':
+            self.build(bench)
         else:
             print 'Unknown operation: '+op
             exit(1)
@@ -410,7 +453,7 @@ def main():
         print '--all'
         print '--list'
         print '--list-json'
-        print '--op=(run|push|pull|tag)'
+        print '--op=(run|push|pull|tag|build)'
         exit(1)
 
     benches = []
