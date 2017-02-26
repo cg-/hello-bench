@@ -13,3 +13,9 @@ RUN tar -zxvf 1.4.9.1.tar.gz
 WORKDIR /src/filebench-1.4.9.1
 RUN libtoolize && aclocal && autoheader && automake --add-missing && autoconf
 RUN ./configure && make && make install
+RUN mkdir /etc/filebench
+ADD workloads/ /etc/filebench
+ADD run.sh /sbin/run.sh
+RUN chmod +x /sbin/run.sh
+
+WORKDIR /

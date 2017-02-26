@@ -67,7 +67,8 @@ class Bench:
         return json.dumps(self.__dict__)
 
 class BenchRunner:
-    STORAGE = { 'local': RunArgs(stdin='echo a >> /volume/test', vol_name='/tmp', vol_driver='local'),}
+    STORAGE = { 'local': RunArgs(stdin_sh='sh -c', stdin='/sbin/run.sh', 
+            vol_name='/tmp', vol_driver='local', waitline="Done with tests."),}
 
     ECHO_HELLO = set(['alpine',
                       'busybox',
@@ -223,7 +224,8 @@ class BenchRunner:
         '''
         run_storage runs storage benchmarks with the provided runargs on the given repo
         '''
-        cmd = '%s run -v %s:/volume --volume-driver=%s ' % (self.docker, runargs.vol_name, runargs.vol_driver)
+        name = '%s_bench_%d' % (repo, random.randint(1,1000000))
+        cmd = '%s run --name=%s -v %s:/volume --volume-driver=%s ' % (self.docker, name, runargs.vol_name, runargs.vol_driver)
 
         if tag is '':
             cmd += '-i %s%s ' % (self.registry, repo)
@@ -233,12 +235,22 @@ class BenchRunner:
             cmd += runargs.stdin_sh # e.g., sh -c
 
         print cmd
-        p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        print runargs.stdin
-        out,_ = p.communicate(runargs.stdin)
-        print out
+        cmd += " " + runargs.stdin
+        p = subprocess.Popen(cmd, shell=True, bufsize=1, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        while True:
+            l = p.stdout.readline()
+            if l == '':
+                continue
+            print 'out: ' + l.strip()
+            # are we done?
+            if l.find(runargs.waitline) >= 0:
+                # cleanup
+                print 'DONE'
+                cmd = '%s kill %s' % (self.docker, name)
+                rc = os.system(cmd)
+                assert(rc == 0)
+                break
         p.wait()
-        assert(p.returncode == 0)
 
     def run_cmd_arg(self, repo, runargs):
         assert(len(runargs.mount) == 0)
