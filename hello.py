@@ -225,7 +225,7 @@ class BenchRunner:
         run_storage runs storage benchmarks with the provided runargs on the given repo
         '''
         name = '%s_bench_%d' % (repo, random.randint(1,1000000))
-        cmd = '%s run --name=%s -v %s:/volume --volume-driver=%s ' % (self.docker, name, runargs.vol_name, runargs.vol_driver)
+        cmd = '%s run --name=%s --privileged=true -v %s:/volume --volume-driver=%s ' % (self.docker, name, runargs.vol_name, runargs.vol_driver)
 
         if tag is '':
             cmd += '-i %s%s ' % (self.registry, repo)

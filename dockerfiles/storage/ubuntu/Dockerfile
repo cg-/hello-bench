@@ -7,10 +7,11 @@ RUN apt-get install -y build-essential automake cmake wget tar libtool bison fle
 
 RUN mkdir /src
 WORKDIR /src
-RUN wget https://github.com/filebench/filebench/archive/1.4.9.1.tar.gz
-RUN tar -zxvf 1.4.9.1.tar.gz
+#RUN wget https://github.com/filebench/filebench/archive/1.4.9.1.tar.gz
+RUN wget https://github.com/filebench/filebench/archive/1.5-alpha3.tar.gz
+RUN tar -zxvf 1.5-alpha3.tar.gz
 
-WORKDIR /src/filebench-1.4.9.1
+WORKDIR /src/filebench-1.5-alpha3
 RUN libtoolize && aclocal && autoheader && automake --add-missing && autoconf
 RUN ./configure && make && make install
 RUN mkdir /etc/filebench

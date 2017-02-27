@@ -23,19 +23,19 @@
 # Use is subject to license terms.
 #
 
-set $dir=/volume
-set $nfiles=10
-set $meandirwidth=10
-set $meanfilesize=16k
+set $dir=/tmp
+set $nfiles=1000
+set $meandirwidth=1000000
+set $filesize=cvar(type=cvar-gamma,parameters=mean:16384;gamma:1.5)
 set $nthreads=16
 set $iosize=1m
 set $meanappendsize=16k
 
-define fileset name=bigfileset,path=$dir,size=$meanfilesize,entries=$nfiles,dirwidth=$meandirwidth,prealloc=10
+define fileset name=bigfileset,path=$dir,size=$filesize,entries=$nfiles,dirwidth=$meandirwidth,prealloc=80
 
 define process name=filereader,instances=1
 {
-  thread name=filereaderthread,memsize=1m,instances=$nthreads
+  thread name=filereaderthread,memsize=10m,instances=$nthreads
   {
     flowop deletefile name=deletefile1,filesetname=bigfileset
     flowop createfile name=createfile2,filesetname=bigfileset,fd=1
@@ -54,13 +54,5 @@ define process name=filereader,instances=1
 }
 
 echo  "Varmail Version 3.0 personality successfully loaded"
-usage "Usage: set \$dir=<dir>"
-usage "       set \$meanfilesize=<size>    defaults to $meanfilesize"
-usage "       set \$nfiles=<value>     defaults to $nfiles"
-usage "       set \$nthreads=<value>   defaults to $nthreads"
-usage "       set \$meanappendsize=<value> defaults to $meanappendsize"
-usage "       set \$iosize=<size>  defaults to $iosize"
-usage "       set \$meandirwidth=<size> defaults to $meandirwidth"
-usage "       run runtime (e.g. run 60)"
 
-run 30
+run 60
