@@ -5,7 +5,7 @@ MAINTAINER Cole Grim version: 1
 RUN apt-get update
 
 # Filebench Setup
-RUN apt-get install -y build-essential automake cmake wget tar libtool bison flex
+RUN apt-get install -y build-essential automake cmake wget tar libtool bison flex git
 
 RUN mkdir /src
 WORKDIR /src
@@ -35,6 +35,12 @@ WORKDIR /src
 RUN wget http://www.coker.com.au/bonnie++/bonnie++-1.03e.tgz
 RUN tar -zxvf bonnie++-1.03e.tgz
 WORKDIR /src/bonnie++-1.03e
+RUN ./configure && make && make install
+
+# FIO
+WORKDIR /src
+RUN git clone http://git.kernel.dk/fio.git
+WORKDIR /src/fio
 RUN ./configure && make && make install
 
 # Cleanup
