@@ -225,7 +225,8 @@ class BenchRunner:
         run_storage runs storage benchmarks with the provided runargs on the given repo
         '''
         name = '%s_bench_%d' % (repo, random.randint(1,1000000))
-        cmd = '%s run --name=%s --privileged=true -v %s:/volume --volume-driver=%s ' % (self.docker, name, runargs.vol_name, runargs.vol_driver)
+        cmd = '%s run --name=%s --privileged=true -v %s:/volume --volume-driver=%s ' % \
+              (self.docker, name, runargs.vol_name, runargs.vol_driver)
 
         if tag is '':
             cmd += '-i %s%s ' % (self.registry, repo)
@@ -237,19 +238,24 @@ class BenchRunner:
         print cmd
         cmd += " " + runargs.stdin
         p = subprocess.Popen(cmd, shell=True, bufsize=1, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        is_result = False
         while True:
             l = p.stdout.readline()
             if l == '':
                 continue
-            print 'out: ' + l.strip()
-            # are we done?
-            if l.find(runargs.waitline) >= 0:
-                # cleanup
-                print 'DONE'
+            if l.find('STARTRES') >= 0:
+                is_result = True
+                continue
+            if l.find('ENDRES') >= 0:
+                is_result = False
                 cmd = '%s kill %s' % (self.docker, name)
                 rc = os.system(cmd)
                 assert(rc == 0)
                 break
+            if is_result is True:
+                print l.strip()
+            else:
+                print 'out: ' + l.strip()
         p.wait()
 
     def run_cmd_arg(self, repo, runargs):
@@ -403,6 +409,7 @@ class BenchRunner:
         elif name in BenchRunner.CMD_STDIN:
             self.run_cmd_stdin(repo=repo, runargs=BenchRunner.CMD_STDIN[name])
         elif name in BenchRunner.STORAGE:
+            self.build(bench)
             if bench.dockerfile is '':
                 self.run_storage(repo=repo, runargs=BenchRunner.STORAGE[name])
             else:
