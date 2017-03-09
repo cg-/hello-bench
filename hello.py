@@ -67,7 +67,7 @@ class Bench:
         return json.dumps(self.__dict__)
 
 class BenchRunner:
-    STORAGE = { 'local': RunArgs(stdin_sh='sh -c', stdin='/sbin/run.sh', 
+    STORAGE = { 'local': RunArgs(stdin_sh='sh -c', stdin='/scripts/run.sh',
             vol_name='/tmp', vol_driver='local', waitline="Done with tests."),}
 
     ECHO_HELLO = set(['alpine',

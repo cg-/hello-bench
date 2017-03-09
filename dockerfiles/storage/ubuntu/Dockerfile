@@ -2,11 +2,16 @@ FROM ubuntu
 
 MAINTAINER Cole Grim version: 1
 
+# Apt Stuff
 RUN apt-get update
+RUN apt-get install -y build-essential automake cmake wget tar libtool bison flex git postmark
+
+# Traces
+RUN mkdir /traces
+WORKDIR /traces
+# todo: download traces we want to run...
 
 # Filebench Setup
-RUN apt-get install -y build-essential automake cmake wget tar libtool bison flex git
-
 RUN mkdir /src
 WORKDIR /src
 RUN wget https://github.com/filebench/filebench/archive/1.5-alpha3.tar.gz
@@ -27,9 +32,6 @@ WORKDIR /src/iozone3_465/src/current
 RUN make linux-AMD64
 RUN mv iozone /usr/bin/iozone
 
-ADD run.sh /sbin/run.sh
-RUN chmod +x /sbin/run.sh
-
 # Bonnie++
 WORKDIR /src
 RUN wget http://www.coker.com.au/bonnie++/bonnie++-1.03e.tgz
@@ -45,5 +47,14 @@ RUN ./configure && make && make install
 
 # Cleanup
 RUN rm -rf /src
+
+# Add scripts
+RUN mkdir /scripts
+WORKDIR /scripts
+ADD run.sh /scripts/run.sh
+ADD fio/ /scripts/fio
+ADD postmark/ /scripts/postmark
+
+RUN chmod +x /scripts/run.sh
 
 WORKDIR /

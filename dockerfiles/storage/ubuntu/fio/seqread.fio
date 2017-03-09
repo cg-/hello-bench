@@ -1,0 +1,17 @@
+[global]
+ioengine=posixaio
+bs=4k
+rw=read
+size=10M
+iodepth=128
+directory=/volume
+thread=1
+
+[job1]
+[job2]
+[job3]
+[job4]
+[job5]
+[job6]
+[job7]
+[job8]
